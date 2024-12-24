@@ -74,7 +74,27 @@ let startLocalStorage;
 let endLocalStorage;
 
 // 사용자 정보 가져오기
-const getUsersInfo = async () => {
+const getUser = async () => {
+	try {
+		const profile = await skapi.getProfile();
+		console.log('profile : ', profile);
+
+		if (profile === null) {
+			console.log('로그인이 필요합니다.');
+			router.push('/');
+			return;
+		} else {
+			user.value.name = profile.name;
+			user.value.access_group = profile.access_group;
+			user.value.user_id = profile.user_id;
+		}
+	} catch (error) {
+		console.error('프로필을 가져오는 중 오류 발생:', error);
+	}
+}
+
+// (마스터용) 사용자 정보 가져오기
+const getUsers = async () => {
 	try {
 		const res = await skapi.getUsers();
 
@@ -89,9 +109,6 @@ const getUsersInfo = async () => {
 		console.log('=== getUser === error : ', { error });
 	}
 };
-
-// timeRecords.value.date = getDate();
-timeRecords.value.date = '2024-12-25';
 
 // 출근시간 기록
 const startWork = () => {
@@ -255,11 +272,11 @@ const onRecord = () => {
 	if (startLocalStorage.length > 0) {
 		const startFilter = startLocalStorage.filter((item) => item.user_id === user.value.user_id);	// 현재 사용자 출근시간 필터
 
-		for(let i = 0; i < startFilter.length; i++) {
-			if(startFilter[i].date === timeRecords.value.date) {
-				timeRecords.value.start = startFilter[i].title.replace('출근 : ', '');	// 오늘의 출근시간 기록
+		startFilter.forEach((item) => {
+			if (item.date === timeRecords.value.date) {
+				timeRecords.value.start = item.title.replace('출근 : ', '');	// 오늘의 출근시간 기록
 			}
-		}
+		});
 		commuteRecords.value = startLocalStorage;
 
 		// 만약 날짜가 바뀌었다면 출근시간 초기화
@@ -270,33 +287,37 @@ const onRecord = () => {
 
 	// 만약 퇴근시간 기록이 있다면
 	if (endLocalStorage.length > 0) {
-		// if(!startLocalStorage.length) {
-		// 	commuteRecords.value = endLocalStorage;
-		// }
-
 		const endFilter = endLocalStorage.filter((item) => item.user_id === user.value.user_id);
 
-		for(let i = 0; i < endFilter.length; i++) {
-			if(endFilter[i].date === timeRecords.value.date) {
-				timeRecords.value.end = endFilter[i].title.replace('퇴근 : ', '');
+		endFilter.forEach((item) => {
+			if (item.date === timeRecords.value.date) {
+				timeRecords.value.end = item.title.replace('퇴근 : ', '');	// 오늘의 퇴근시간 기록
 			}
-		}
+		});
 
 		// 출근시간만 찍고 퇴근은 안 찍었을 수 있으니까, 출퇴근 시간 매칭
-		for (let i = 0; i < commuteRecords.value.length; i++) {
-			const originDate = commuteRecords.value[i].date;
-
-			for (let j = 0; j < endLocalStorage.length; j++) {
-				const endDate = endLocalStorage[j].date;
-
-				if (originDate === endDate && commuteRecords.value[i].user_id === endLocalStorage[j].user_id) {
-					commuteRecords.value[i].endWork = endLocalStorage[j].endWork;
-					break;	
-				} else {
-					commuteRecords.value[i].endWork = '';	// 출근만 찍고 퇴근은 안 찍었을 때
+		commuteRecords.value.forEach(item => {
+			endFilter.forEach(endItem => {
+				if (item.date === endItem.date) {
+					item.endWork = endItem.endWork;
 				}
-			}
-		}
+			});
+		});
+
+		// for (let i = 0; i < commuteRecords.value.length; i++) {
+		// 	const originDate = commuteRecords.value[i].date;
+
+		// 	for (let j = 0; j < endLocalStorage.length; j++) {
+		// 		const endDate = endLocalStorage[j].date;
+
+		// 		if (originDate === endDate && commuteRecords.value[i].user_id === endLocalStorage[j].user_id) {
+		// 			commuteRecords.value[i].endWork = endLocalStorage[j].endWork;
+		// 			break;	
+		// 		} else {
+		// 			commuteRecords.value[i].endWork = '';	// 출근만 찍고 퇴근은 안 찍었을 때
+		// 		}
+		// 	}
+		// }
 
 		// 만약 날짜가 바뀌었다면 퇴근시간 초기화
 		if ((endLocalStorage[endLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
@@ -306,22 +327,14 @@ const onRecord = () => {
 }
 
 onMounted(async () => {
-	await getUsersInfo();
+	// timeRecords.value.date = getDate();
+	timeRecords.value.date = '2024-12-25';
 
-	try {
-		const profile = await skapi.getProfile();
-		console.log('profile : ', profile);
-
-		if (profile === null) {
-			console.log('로그인이 필요합니다.');
-		} else {
-			user.value.name = profile.name;
-			user.value.access_group = profile.access_group;
-			user.value.user_id = profile.user_id;
-		}
-	} catch (error) {
-		console.error('프로필을 가져오는 중 오류 발생:', error);
+	if (user.value.access_group > 98) {
+		const res = await getUsers();
 	}
+
+	await getUser();
 
 	onRecord();
 	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
