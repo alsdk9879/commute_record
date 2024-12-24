@@ -1,32 +1,27 @@
 <template lang="pug">
-	h2 로그인
+#login
+	h2.title 로그인
 
-	br
-	br
-	br
+	form#loginForm(@submit.prevent="login")
+		label.input-wrap
+			span.label 이메일
+			input.input.email(type="email" name="email" placeholder="user@email.com" required)
 
-	form#login(@submit.prevent="login")
-		label
-			span 이메일
-			input.email(type="email" name="email" placeholder="user@email.com" required)
+		label.input-wrap
+			span.label 비밀번호
+			input.input.password(type="password" name="password" placeholder="At least 6 characters" minlength="6" required)
 
-		label
-			span 비밀번호
-			input.password(type="password" name="password" placeholder="At least 6 characters" minlength="6" required)
+		label.input-wrap
+			span.label 이름
+			input.input.name(type="text" name="name" placeholder="name" required)
 
-		label
-			span 이름
-			input.name(type="text" name="name" placeholder="name" required)
-
-		input(type="submit" value="Login")
-
-	router-link(to="/signup") 회원가입
-
+		.btn-wrap
+			router-link.btn-join(to="/signup") 회원가입
+			button.btns.btn-login(type="submit") 로그인
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue';
 import { skapi } from '@/main';
 
 const router = useRouter();
@@ -45,7 +40,6 @@ const login = async (event) => {
     
     try {
         const res = await skapi.login(parms);
-        console.log(res);
         router.push('/commute-save');
     } catch (error) {
         console.error('Login failed:', error);
@@ -55,5 +49,33 @@ const login = async (event) => {
 </script>
 
 <style scoped lang="less">
+#login {
+	max-width: 500px;
+	margin: 0 auto;
+	padding: 5rem 0;
+}
 
+.title {
+	text-align: center;
+	padding-bottom: 2rem;
+	border-bottom: 1px solid #ccc;
+}
+
+#loginForm {
+	margin-top: 2rem;
+
+	.btn-wrap {
+		justify-content: space-between;
+	}
+
+	.btn-join {
+		color: #2c3e50;
+		margin-left: auto;
+		margin-right: 1rem;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
 </style>

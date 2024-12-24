@@ -1,4 +1,6 @@
-import { createApp } from 'vue';
+import './assets/less/main.less';
+
+import { createApp, ref } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { Skapi } from 'skapi-js';

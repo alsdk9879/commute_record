@@ -1,5 +1,6 @@
 <template lang="pug">
-	router-view
+	.main
+		router-view
 </template>
 
 <script setup lang="ts">
@@ -11,5 +12,10 @@ const route = useRoute();
 </script>
 
 <style scoped lang="less">
-
+.main {
+	width: 100%;
+	max-width: 880px;
+	padding: 3rem 2rem;
+	margin: 0 auto;
+}
 </style>

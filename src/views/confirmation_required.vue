@@ -10,7 +10,6 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue';
 import { skapi } from '@/main';
 
 const router = useRouter();
