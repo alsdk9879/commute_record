@@ -50,10 +50,11 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, createStaticVNode } from 'vue';
 import { skapi } from '@/main';
 import { getDate, getTime } from '@/utils/time';
 import { getUserInfo, getUserList } from '@/hooks/getUser';
+import { getUserWorkList, createStartWork, addStartWork } from '@/hooks/getWorkList';
   
 const router = useRouter();
 const route = useRoute();
@@ -71,8 +72,8 @@ let startLocalStorage;
 let endLocalStorage;
 
 // 출근시간 기록
-const startWork = () => {
-	const date = '2024-12-27';
+const startWork = async () => {
+	const date = '2024-12-28';
 	// const date = getDate();
 	const time = getTime();
 
@@ -112,31 +113,31 @@ const startWork = () => {
 			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 출근 시간 추가
 		}
 
-		window.localStorage.setItem('startTime', JSON.stringify(startLocalStorage));
+		// window.localStorage.setItem('startTime', JSON.stringify(startLocalStorage));
 
-		// const data = {
-		//     startWork: startLocalStorage
-		// }
+		const data = {
+		    startWork: [...startLocalStorage]
+		}
 
-		// const config = {
-		//     table: 'my_startWork_time',
-		//     access_group: 99,
-		//     record_id: user.user_id
-		// }
+		const workList = window.localStorage.getItem('startTime');
 
-		// skapi.postRecord(data, config).then(record => {
-		//     console.log('출근 === postRecord === record : ', record);
-		// });
+		console.log('== workList == : ', workList)
+
+		if (!workList) {
+			await createStartWork({ data, user_id: user.user_id })
+		} else {
+			await addStartWork({ data })
+		}
+		
 	} else {
 		alert('출근 시간이 이미 기록되어 있습니다.');
 		return;
 	}
-
 }
 
 // 퇴근시간 기록
 const endWork = () => {
-	const date = '2024-12-27';
+	const date = '2024-12-28';
 	// const date = getDate();
 	const time = getTime();
 
@@ -202,15 +203,7 @@ const endWork = () => {
 	}
 }
 
-// let query = {
-//     table: 'my_startWork_time'
-// }
 
-// skapi.getRecords(query).then(response=>{
-// 	console.log('=== getRecords === response : ', response.list);
-
-// 	const recordsList = response.list;
-// });
 
 // 로그아웃
 const logout = async () => {
@@ -233,6 +226,7 @@ const onRecord = () => {
 		const startFilter = startLocalStorage.filter((item) => item.user_id === user.value.user_id);	// 현재 사용자 출근시간 필터
 
 		startFilter.forEach((item) => {
+			console.log('item : ', item);
 			if (item.date === timeRecords.value.date) {
 				timeRecords.value.start = item.title.replace('출근 : ', '');	// 오늘의 출근시간 기록
 			}
@@ -288,7 +282,7 @@ const onRecord = () => {
 
 onMounted(async () => {
 	// timeRecords.value.date = getDate();
-	timeRecords.value.date = '2024-12-27';
+	timeRecords.value.date = '2024-12-28';
 
   const res = await getUserInfo();
 
@@ -302,7 +296,17 @@ onMounted(async () => {
 	onRecord();
 	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
 	commuteRecords.value = startLocalStorage;
+
+	console.log('startLocalStorage : ', startLocalStorage);	
 });
+
+onMounted(async () => {
+	const workList = await getUserWorkList();
+
+	if (!workList) return;
+
+	window.localStorage.setItem('startTime', JSON.stringify(workList));
+})
 </script>
 
 <style scoped lang="less">

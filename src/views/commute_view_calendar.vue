@@ -8,17 +8,14 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
+import { getUserInfo } from '@/hooks/getUser';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 
 const router = useRouter();
 const route = useRoute();
 
-const user = ref({ 
-	name: '',
-	access_group: 0,
-	user_id: '',
-});
+const user = ref(null);
 
 // FullCalendar 옵션
 const calendarOptions = ref({
@@ -31,20 +28,8 @@ let startLocalStorage;
 let endLocalStorage;
 
 onMounted(async () => {	
-	try {
-		const profile = await skapi.getProfile();
-		console.log('profile : ', profile);
-
-		if (profile === null) {
-			console.log('로그인이 필요합니다.');
-		} else {
-			user.value.name = profile.name;
-			user.value.access_group = profile.access_group;
-			user.value.user_id = profile.user_id;
-		}
-	} catch (error) {
-		console.error('프로필을 가져오는 중 오류 발생:', error);
-	}
+	const res = await getUserInfo();
+	user.value = res;
 
 	if((window.localStorage.getItem('startTime') || window.localStorage.getItem('endTime'))) {
 		startLocalStorage = JSON.parse(window.localStorage.getItem('startTime'));

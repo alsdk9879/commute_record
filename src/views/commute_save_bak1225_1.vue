@@ -52,8 +52,8 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
-import { getDate, getTime } from '@/utils/time';
-import { getUserInfo, getUserList } from '@/hooks/getUser';
+import { getDate, getTime } from '@/time';
+import { getUserInfo } from '@/hooks/getUser';
   
 const router = useRouter();
 const route = useRoute();
@@ -66,13 +66,50 @@ const timeRecords = ref({
 });
 const user = ref(null);
 
-let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];
+let userLocalStorage;
 let startLocalStorage;
 let endLocalStorage;
 
+// 사용자 정보 가져오기
+const getUser = async () => {
+	try {
+		const profile = await skapi.getProfile();
+		console.log('profile : ', profile);
+
+		if (profile === null) {
+			console.log('로그인이 필요합니다.');
+			router.push('/');
+			return;
+		} else {
+			user.value.name = profile.name;
+			user.value.access_group = profile.access_group;
+			user.value.user_id = profile.user_id;
+		}
+	} catch (error) {
+		console.error('프로필을 가져오는 중 오류 발생:', error);
+	}
+}
+
+// (마스터용) 사용자 정보 가져오기
+const getUsers = async () => {
+	try {
+		const res = await skapi.getUsers();
+
+		window.localStorage.setItem('usersInfo', JSON.stringify(res.list));
+		userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];
+
+		const userFilter = userLocalStorage.filter((item) => item.user_id === user.value.user_id);
+		user.value = userFilter;
+
+		return userLocalStorage;
+	} catch (error) {
+		console.log('=== getUser === error : ', { error });
+	}
+};
+
 // 출근시간 기록
 const startWork = () => {
-	const date = '2024-12-27';
+	const date = '2024-12-25';
 	// const date = getDate();
 	const time = getTime();
 
@@ -136,7 +173,7 @@ const startWork = () => {
 
 // 퇴근시간 기록
 const endWork = () => {
-	const date = '2024-12-27';
+	const date = '2024-12-25';
 	// const date = getDate();
 	const time = getTime();
 
@@ -286,22 +323,28 @@ const onRecord = () => {
 	}
 }
 
-onMounted(async () => {
-	// timeRecords.value.date = getDate();
-	timeRecords.value.date = '2024-12-27';
+// onMounted(async () => {
+// 	// timeRecords.value.date = getDate();
+// 	timeRecords.value.date = '2024-12-25';
 
+// 	if (user.value.access_group > 98) {
+// 		const res = await getUsers();
+// 	}
+
+// 	await getUser();
+
+// 	onRecord();
+// 	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
+// 	commuteRecords.value = startLocalStorage;
+// });
+onMounted(async () => {
+	console.log('=== onMounted ===');
   const res = await getUserInfo();
 
+	console.log('=== onMounted === res : ', res);
 	if (!res) return;
+
 	user.value = res;
-
-	if(user.value.access_group > 98 && userLocalStorage.length === 0) {
-		const res = await getUserList();
-	}
-
-	onRecord();
-	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
-	commuteRecords.value = startLocalStorage;
 });
 </script>
 
