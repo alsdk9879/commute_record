@@ -72,7 +72,7 @@ let endLocalStorage;
 
 // 출근시간 기록
 const startWork = () => {
-	const date = '2024-12-27';
+	const date = '2024-12-26';
 	// const date = getDate();
 	const time = getTime();
 
@@ -136,7 +136,7 @@ const startWork = () => {
 
 // 퇴근시간 기록
 const endWork = () => {
-	const date = '2024-12-27';
+	const date = '2024-12-26';
 	// const date = getDate();
 	const time = getTime();
 
@@ -288,7 +288,7 @@ const onRecord = () => {
 
 onMounted(async () => {
 	// timeRecords.value.date = getDate();
-	timeRecords.value.date = '2024-12-27';
+	timeRecords.value.date = '2024-12-26';
 
   const res = await getUserInfo();
 

@@ -47,17 +47,30 @@ onMounted(() => {
 	endLocalStorage = endLocalStorage.filter((item) => item.user_id === userId);
 
 	// 출퇴근 시간 비교해서 같은 날짜의 데이터를 찾아서 저장
-	for(let i = 0; i < startLocalStorage.length; i++) {
-		const startDate = startLocalStorage[i].date;
+	startLocalStorage.forEach(startItem => {
+		const startDate = startItem.date;
 
-		for(let j = 0; j < endLocalStorage.length; j++) {
-			const endDate = endLocalStorage[j].date;
+		endLocalStorage.forEach(item => {
+			const endDate = item.date;
 
 			if(startDate === endDate) {
-				startLocalStorage[i].endWork = endLocalStorage[j].endWork;
+				// item.startWork = item.start;
+				startItem.endWork = item.endWork;
 			}
-		}
-	}
+		});
+	});
+
+	// for(let i = 0; i < startLocalStorage.length; i++) {
+	// 	const startDate = startLocalStorage[i].date;
+
+	// 	for(let j = 0; j < endLocalStorage.length; j++) {
+	// 		const endDate = endLocalStorage[j].date;
+
+	// 		if(startDate === endDate) {
+	// 			startLocalStorage[i].endWork = endLocalStorage[j].endWork;
+	// 		}
+	// 	}
+	// }
 
 	commuteRecords.value = startLocalStorage;
 });
