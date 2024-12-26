@@ -54,7 +54,7 @@ import { ref, onMounted, createStaticVNode } from 'vue';
 import { skapi } from '@/main';
 import { getDate, getTime } from '@/utils/time';
 import { getUserInfo, getUserList } from '@/hooks/getUser';
-import { getUserWorkList, createStartWork, addStartWork } from '@/hooks/getWorkList';
+// import { getUserWorkList, createStartWork, addStartWork } from '@/hooks/getWorkList';
   
 const router = useRouter();
 const route = useRoute();
@@ -73,7 +73,7 @@ let endLocalStorage;
 
 // 출근시간 기록
 const startWork = async () => {
-	const date = '2024-12-28';
+	const date = '2024-12-26';
 	// const date = getDate();
 	const time = getTime();
 
@@ -116,19 +116,18 @@ const startWork = async () => {
 		// window.localStorage.setItem('startTime', JSON.stringify(startLocalStorage));
 
 		const data = {
-		    startWork: [...startLocalStorage]
+		    startWork: startLocalStorage
 		}
 
-		const workList = window.localStorage.getItem('startTime');
-
-		console.log('== workList == : ', workList)
-
-		if (!workList) {
-			await createStartWork({ data, user_id: user.user_id })
-		} else {
-			await addStartWork({ data })
+		const config = {
+		    table: 'my_startWork_time',
+		    access_group: 99,
+		    record_id: user.user_id
 		}
-		
+
+		skapi.postRecord(data, config).then(record => {
+		    console.log('출근 === postRecord === record : ', record);
+		});
 	} else {
 		alert('출근 시간이 이미 기록되어 있습니다.');
 		return;
@@ -137,7 +136,7 @@ const startWork = async () => {
 
 // 퇴근시간 기록
 const endWork = () => {
-	const date = '2024-12-28';
+	const date = '2024-12-26';
 	// const date = getDate();
 	const time = getTime();
 
@@ -184,26 +183,24 @@ const endWork = () => {
 
 		window.localStorage.setItem('endTime', JSON.stringify(endLocalStorage));
 
-		// const data = {
-		// 	endWork: endLocalStorage
-		// }
+		const data = {
+			endWork: endLocalStorage
+		}
 
-		// const config = {
-		// 	table: 'my_endtWork_time',
-		// 	access_group: 99,
-		// 	record_id: user.user_id
-		// }
+		const config = {
+			table: 'my_endtWork_time',
+			access_group: 99,
+			record_id: user.user_id
+		}
 
-		// skapi.postRecord(data, config).then(record=>{
-		// 	console.log('퇴근 === postRecord === record : ', record);
-		// });
+		skapi.postRecord(data, config).then(record=>{
+			console.log('퇴근 === postRecord === record : ', record);
+		});
 	} else {
 		alert('퇴근 시간이 이미 기록되어 있습니다.');
 		return;
 	}
 }
-
-
 
 // 로그아웃
 const logout = async () => {
@@ -282,7 +279,7 @@ const onRecord = () => {
 
 onMounted(async () => {
 	// timeRecords.value.date = getDate();
-	timeRecords.value.date = '2024-12-28';
+	timeRecords.value.date = '2024-12-26';
 
   const res = await getUserInfo();
 
@@ -301,11 +298,27 @@ onMounted(async () => {
 });
 
 onMounted(async () => {
-	const workList = await getUserWorkList();
+	// 출근시간 기록 database에서 가져오기
+	let startQuery = {
+	    table: 'my_startWork_time'
+	}
 
-	if (!workList) return;
+	skapi.getRecords(startQuery).then(res=>{
+		console.log('출근 === getRecords === res : ', res.list);
 
-	window.localStorage.setItem('startTime', JSON.stringify(workList));
+		const recordsList = res.list;
+	});
+
+	// 퇴근시간 기록 database에서 가져오기
+	let endQuery = {
+	    table: 'my_endWork_time'
+	}
+
+	skapi.getRecords(endQuery).then(res=>{
+		console.log('퇴근 === getRecords === res : ', res.list);
+
+		const recordsList = res.list;
+	});
 })
 </script>
 
