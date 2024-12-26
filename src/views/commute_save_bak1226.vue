@@ -57,67 +57,16 @@ import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { getDate, getTime } from '@/utils/time';
 import { getUserInfo, getUserList } from '@/hooks/getUser';
-
-// 시간계산
-
-// 계산할 두 시각을 정한다.
-
-// var 시간1 = new Date("2019-09-03 12:00:00");
-
-// var 시간2 = new Date("2019-09-03 14:23:32");
-
-
-
-// 두 시각의 간격을 변수 "간격"에 입력한다.
-
-// var 간격 = 시간2 - 시간1;
-
-// // 간격 의 값은 8612000(밀리초) 가 된다.
-
-
-
-// 간격 값의 시, 분, 초 값을 얻는다.
-
-// var 시 = Math.floor((간격 % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-// var 분 = Math.floor((간격 % (1000 * 60 * 60)) / (1000 * 60));
-
-// var 초 = Math.floor((간격 % (1000 * 60)) / 1000);
-
-// console.log( 시 +"시간 "+ 분 +"분 "+ 초 +"초" );
-
-// // 2시간 23분 32초
-
-
-// : 마스터가 default 출퇴근 시간 설정 가능.
-// : 직원이 출근 (최초 1회만 기록됨) 찍고, 이후 16시간동안은 퇴근 여러번 찍어도 마지막 퇴근기록만 기록됨.
-//     (하루 기준을 날짜로 정하지 않고, 출근기록으로부터 16시간동안으로 생각하면 됨.)
-// : 만약 직원이 default 출근시간 내에 안 찍었으면, 출근은 지각처리됨.
-// : 만약 직원이 default 퇴근시간 내에 안 찍었을 경우, 공백으로 처리됨.
-// : 만약 출퇴근 둘 다 안 찍었을 경우, 공백으로 남겨둠.
-
-// (상황 예시)
-// : 마스터가 default 출퇴근 시간으로 출근: 8~10시 / 퇴근: 17~19시 설정해둠.
-// : 직원이 12/26 10시 출근 찍고, 이후 12/27 02시까지는 퇴근 여러번 찍어도 마지막 퇴근기록만 기록됨. (하루 근무 기준)
-// : 만약 직원이 8~10시 내에 출근 안 찍었으면, ‘지각’으로 처리됨.
-// : 만약 직원이 12/26 17~19시 내에 안 찍었을 경우, 공백으로 처리됨. (대신 출근시간이후부터 16시간동안은 퇴근 언제든 찍기 가능.)
-// : 만약 출퇴근 둘 다 안 찍었을 경우, 공백으로 남겨둠.
   
 const router = useRouter();
 const route = useRoute();
 
 const user = ref(null);
-const commuteRecords = ref([]); // [ {출근, 날짜}, 출근 ];
+const commuteRecords = ref([]);
 const timeRecords = ref({
 	start: '',
 	end: '',
 	date: '',
-});
-const defaultCommute = ref({
-	minStart: '08:00:00',
-	maxStart: '10:00:00',
-	minEnd: '17:00:00',
-	maxEnd: '19:00:00'
 });
 
 let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];
@@ -126,10 +75,9 @@ let endLocalStorage;
 
 // 출근시간 기록
 const startWork = () => {
-	// const date = getDate();
-	// const time = getTime();
 	const date = '2024-12-26';
-	const time = '08:23:00';
+	// const date = getDate();
+	const time = getTime();
 
 	timeRecords.value.date = date;
 
@@ -166,10 +114,9 @@ const startWork = () => {
 
 // 퇴근시간 기록
 const endWork = () => {
-	// const date = getDate();
-	// const time = getTime();
 	const date = '2024-12-26';
-	const time = '23:56:23';
+	// const date = getDate();
+	const time = getTime();
 
 	timeRecords.value.date = date;
 
@@ -207,10 +154,6 @@ const endWork = () => {
 			}
 		}
 
-		// 함수 사용 참고
-		// let wt = workTime(newEvent); // 00시간 00분
-		// newEvent.workTime = wt;
-
 		// 만약 오늘과 다른 날짜가 되었다면
 		if (!dateFound) {
 			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 퇴근시간 추가
@@ -221,13 +164,12 @@ const endWork = () => {
 		alert('퇴근시간이 이미 기록되어 있습니다.');
 		return;
 	}
-
 }
 
 // 일일 근무시간 기록
-const workTime = (item) => {
-	let workTime = ''
-	// commuteRecords.value.forEach(item => {
+const workTime = () => {
+	
+	commuteRecords.value.forEach(item => {
 		console.log('item : ', item);
 		const start = item.startWork.split(':');
 		const end = item.endWork.split(':');
@@ -240,9 +182,8 @@ const workTime = (item) => {
 
 		console.log('workHour : ', workHour);
 
-		workTime = `${workHour}시간 ${workMin}분`;
-	// });
-	return workTime;
+		item.workTime = `${workHour}시간 ${workMin}분`;
+	});
 }
 
 // 로그아웃
@@ -321,25 +262,6 @@ onMounted(async () => {
 	onRecord();
 	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
 	commuteRecords.value = startLocalStorage;
-
-	const text = document.querySelector("h1");
-
-	function getTime(){
-		const Dday = new Date("2021-08-29:00:00:00+0900");
-		const today = new Date();
-		const diff = Dday.getTime() - today.getTime(),
-			// Ms 단위로 변환
-			secInMs = Math.floor(difference / 1000),
-			minInMs = Math.floor(secInMs / 60),
-			hourInMs = Math.floor(minInMs / 60),
-			days = Math.floor(hourInMs / 24),
-			// 남은 시간 계산
-			seconds = secInMs % 60,
-			minutes = minInMs % 60,
-			hours = minutes % 24;
-
-		text.innerHTML = `${days}일 ${hours}시간 ${minutes}분 ${seconds}초`
-	}
 });
 </script>
 
