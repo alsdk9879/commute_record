@@ -5,7 +5,7 @@ import router from '@/router';
 const getUserInfo = async () => {
   try {
     const profile = await skapi.getProfile();
-    console.log('== getUserProfile : profile == : ', profile);
+    // console.log('== getUserProfile : profile == : ', profile);
 
     if (!profile) {
       alert('로그인이 필요합니다.');
