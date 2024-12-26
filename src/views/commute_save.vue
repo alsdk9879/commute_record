@@ -15,7 +15,7 @@
 	span.today 
 		.icon
 			svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
+				use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
 		| {{ timeRecords.date }}
 
 .itembox
@@ -58,13 +58,13 @@ import { getUserInfo, getUserList } from '@/hooks/getUser';
 const router = useRouter();
 const route = useRoute();
 
+const user = ref(null);
 const commuteRecords = ref([]);
 const timeRecords = ref({
 	start: '',
 	end: '',
 	date: '',
 });
-const user = ref(null);
 
 let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];
 let startLocalStorage;
@@ -97,40 +97,16 @@ const startWork = () => {
 
 		let dateFound = false; // 날짜가 이미 존재하는지 체크하는 변수
 
-		// for (let i = 0; i < commuteRecords.value.length; i++) {
-		// 	if (commuteRecords.value[i].date === date) {
-		// 		// 같은 날 퇴근 시간에 출근 시간 추가
-		// 		commuteRecords.value[i].startWork = time; 
-		// 		dateFound = true; // 날짜가 존재함을 표시
-		// 		break; // 날짜가 발견되면 루프 종료
-		// 	}
-		// }
-
 		// 만약 오늘과 다른 날짜가 되었다면
 		if (!dateFound) {
 			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 출근 시간 추가
 		}
 
 		window.localStorage.setItem('startTime', JSON.stringify(startLocalStorage));
-
-		// const data = {
-		//     startWork: startLocalStorage
-		// }
-
-		// const config = {
-		//     table: 'my_startWork_time',
-		//     access_group: 99,
-		//     record_id: user.user_id
-		// }
-
-		// skapi.postRecord(data, config).then(record => {
-		//     console.log('출근 === postRecord === record : ', record);
-		// });
 	} else {
-		alert('출근 시간이 이미 기록되어 있습니다.');
+		alert('출근시간이 이미 기록되어 있습니다.');
 		return;
 	}
-
 }
 
 // 퇴근시간 기록
@@ -141,9 +117,9 @@ const endWork = () => {
 
 	timeRecords.value.date = date;
 
-	// 만약 직원이 직접 출근 시간을 기록하지 않았다면
+	// 만약 직원이 출근시간을 기록하지 않았다면
 	if (!startLocalStorage.some(record => record.start === date && record.user_id === user.value.user_id)) {
-		alert('출근 시간이 기록되지 않았습니다. 출근시간을 먼저 기록해주세요.');
+		alert('출근시간이 기록되지 않았습니다. 출근시간을 먼저 기록해주세요.');
 		return;
 	}
 
@@ -164,12 +140,12 @@ const endWork = () => {
 		};	// fullCalendar에 사용되는 옵션도 포함
 		endLocalStorage.push(newEvent);
 
-		// 같은 날짜에 대한 퇴근 시간 추가
+		// 같은 날짜에 대한 퇴근시간 추가
 		let dateFound = false; // 날짜가 이미 존재하는지 체크하는 변수
 
 		for (let i = 0; i < commuteRecords.value.length; i++) {
 			if (commuteRecords.value[i].date === date) {
-				commuteRecords.value[i].endWork = time; // 같은 날 출근 시간에 퇴근 시간 추가
+				commuteRecords.value[i].endWork = time; // 같은 날 출근시간에 퇴근시간 추가
 				dateFound = true;
 				break;
 			}
@@ -177,48 +153,23 @@ const endWork = () => {
 
 		// 만약 오늘과 다른 날짜가 되었다면
 		if (!dateFound) {
-			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 퇴근 시간 추가
+			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 퇴근시간 추가
 		}
 
 		window.localStorage.setItem('endTime', JSON.stringify(endLocalStorage));
-
-		// const data = {
-		// 	endWork: endLocalStorage
-		// }
-
-		// const config = {
-		// 	table: 'my_endtWork_time',
-		// 	access_group: 99,
-		// 	record_id: user.user_id
-		// }
-
-		// skapi.postRecord(data, config).then(record=>{
-		// 	console.log('퇴근 === postRecord === record : ', record);
-		// });
 	} else {
-		alert('퇴근 시간이 이미 기록되어 있습니다.');
+		alert('퇴근시간이 이미 기록되어 있습니다.');
 		return;
 	}
 }
-
-// let query = {
-//     table: 'my_startWork_time'
-// }
-
-// skapi.getRecords(query).then(response=>{
-// 	console.log('=== getRecords === response : ', response.list);
-
-// 	const recordsList = response.list;
-// });
 
 // 로그아웃
 const logout = async () => {
 	try {
 		await skapi.logout();
 		router.push('/');
-		// window.localStorage.clear();
 	} catch (error) {
-		console.error('로그아웃 중 오류 발생:', error);
+		console.error('로그아웃 중 오류 발생 : ', error);
 	}
 };
 
@@ -263,21 +214,6 @@ const onRecord = () => {
 			});
 		});
 
-		// for (let i = 0; i < commuteRecords.value.length; i++) {
-		// 	const originDate = commuteRecords.value[i].date;
-
-		// 	for (let j = 0; j < endLocalStorage.length; j++) {
-		// 		const endDate = endLocalStorage[j].date;
-
-		// 		if (originDate === endDate && commuteRecords.value[i].user_id === endLocalStorage[j].user_id) {
-		// 			commuteRecords.value[i].endWork = endLocalStorage[j].endWork;
-		// 			break;	
-		// 		} else {
-		// 			commuteRecords.value[i].endWork = '';	// 출근만 찍고 퇴근은 안 찍었을 때
-		// 		}
-		// 	}
-		// }
-
 		// 만약 날짜가 바뀌었다면 퇴근시간 초기화
 		if ((endLocalStorage[endLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
 			timeRecords.value.end = '';
@@ -289,7 +225,7 @@ onMounted(async () => {
 	// timeRecords.value.date = getDate();
 	timeRecords.value.date = '2024-12-26';
 
-  const res = await getUserInfo();
+  	const res = await getUserInfo();
 
 	if (!res) return;
 	user.value = res;

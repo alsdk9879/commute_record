@@ -1,9 +1,6 @@
 import { skapi } from '@/main';
 import router from '@/router';
 
-// skapi에서 UserProfile을 못가져오는 문제가 있어서 타입 에러남.
-// Composition API 사용하는 방식을 구현하려고 함
-
 // 사용자 정보 가져오기
 const getUserInfo = async () => {
   try {
