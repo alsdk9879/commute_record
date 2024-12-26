@@ -11,7 +11,7 @@
 .itembox
 	.title-wrap(style="margin-bottom: 0;")
 		h3.title 오늘의 출퇴근 기록을 남겨주세요.
-		button.btns.sm.outline(@click="router.push('/commute-view-calendar')") 출퇴근 기록 캘린더
+		//- button.btns.sm.outline(@click="router.push('/commute-view-calendar')") 출퇴근 기록 캘린더
 	span.today 
 		.icon
 			svg
@@ -34,21 +34,21 @@
 				col(style="width: 10%")
 				col(style="width: 10%")
 				col(style="width: 10%")
-				col(style="width: 10%")
+				//- col(style="width: 10%")
 
 			thead
 				tr
 					th 날짜
 					th 출근시간
 					th 퇴근시간
-					th 근무시간
+					//- th 근무시간
 
 			tbody
 				tr(v-for="record in commuteRecords")
 					td.date {{ record.date }}
 					td.start-time {{ record.startWork }}
 					td.end-time {{ record.endWork }}
-					td.work-time {{ record.workTime }}
+					//- td.work-time {{ record.workTime }}
 </template>
 
 <script setup>
@@ -57,37 +57,6 @@ import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { getDate, getTime } from '@/utils/time';
 import { getUserInfo, getUserList } from '@/hooks/getUser';
-
-// 시간계산
-
-// 계산할 두 시각을 정한다.
-
-// var 시간1 = new Date("2019-09-03 12:00:00");
-
-// var 시간2 = new Date("2019-09-03 14:23:32");
-
-
-
-// 두 시각의 간격을 변수 "간격"에 입력한다.
-
-// var 간격 = 시간2 - 시간1;
-
-// // 간격 의 값은 8612000(밀리초) 가 된다.
-
-
-
-// 간격 값의 시, 분, 초 값을 얻는다.
-
-// var 시 = Math.floor((간격 % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-// var 분 = Math.floor((간격 % (1000 * 60 * 60)) / (1000 * 60));
-
-// var 초 = Math.floor((간격 % (1000 * 60)) / 1000);
-
-// console.log( 시 +"시간 "+ 분 +"분 "+ 초 +"초" );
-
-// // 2시간 23분 32초
-
 
 // : 마스터가 default 출퇴근 시간 설정 가능.
 // : 직원이 출근 (최초 1회만 기록됨) 찍고, 이후 16시간동안은 퇴근 여러번 찍어도 마지막 퇴근기록만 기록됨.
@@ -106,13 +75,14 @@ import { getUserInfo, getUserList } from '@/hooks/getUser';
 const router = useRouter();
 const route = useRoute();
 
-const user = ref(null);
-const commuteRecords = ref([]); // [ {출근, 날짜}, 출근 ];
+const user = ref({});
+const commuteRecords = ref([]);
 const timeRecords = ref({
 	start: '',
 	end: '',
 	date: '',
 });
+// 마스터가 정한 기본 출퇴근 시간 (시간은 임시작성)
 const defaultCommute = ref({
 	minStart: '08:00:00',
 	maxStart: '10:00:00',
@@ -120,35 +90,35 @@ const defaultCommute = ref({
 	maxEnd: '19:00:00'
 });
 
-let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];
-let startLocalStorage;
-let endLocalStorage;
+let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];	// 직원 정보 저장
+let commuteLocalStorage;	// 직원별 출퇴근 정보 저장소
 
 // 출근시간 기록
 const startWork = () => {
 	// const date = getDate();
-	// const time = getTime();
+	const time = getTime();
 	const date = '2024-12-26';
-	const time = '08:23:00';
+	// const time = '08:23:00';
 
 	timeRecords.value.date = date;
 
-	startLocalStorage = JSON.parse(window.localStorage.getItem('startTime')) || [];
+	commuteLocalStorage = JSON.parse(window.localStorage.getItem(`commuteRecords : ${user.value.user_id}`)) || [];
 
-	if (!startLocalStorage.some(record => record.start === date && record.user_id === user.value.user_id)) {	// .some() : 배열의 특정 조건을 만족하는 요소가 있는지 확인
+	if(commuteLocalStorage.length === 0 || !commuteLocalStorage.find(record => record.date === date)) {
 		timeRecords.value.start = time;
 
 		const newEvent = {
-			title: `출근 : ${time}`,
-			start: date,
-			end: date,
-			backgroundColor: '#087c08',
 			date: date,
 			startWork: time,
 			endWork: '',
-			user_id: user.value.user_id
-		};	// fullCalendar에 사용되는 옵션도 포함
-		startLocalStorage.push(newEvent);
+			// user_id: user.value.user_id,
+			// 이하 fullCalendar에 사용되는 옵션 (캘린더 사용 안할 시 삭제)
+			// title: `출근 : ${time}`,
+			// start: date,
+			// end: date,
+			// backgroundColor: '#087c08',
+		};	
+		commuteLocalStorage.push(newEvent);
 
 		let dateFound = false; // 날짜가 이미 존재하는지 체크하는 변수
 
@@ -157,8 +127,9 @@ const startWork = () => {
 			commuteRecords.value.push(newEvent); // 새로운 날짜에 대한 출근 시간 추가
 		}
 
-		window.localStorage.setItem('startTime', JSON.stringify(startLocalStorage));
-	} else {
+		window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
+	} 
+	else {
 		alert('출근시간이 이미 기록되어 있습니다.');
 		return;
 	}
@@ -174,12 +145,19 @@ const endWork = () => {
 	timeRecords.value.date = date;
 
 	// 만약 직원이 출근시간을 기록하지 않았다면
-	if (!startLocalStorage.some(record => record.start === date && record.user_id === user.value.user_id)) {
+	if(commuteLocalStorage.length === 0 || !commuteLocalStorage.find(record => record.date === date)) {
 		alert('출근시간이 기록되지 않았습니다. 출근시간을 먼저 기록해주세요.');
 		return;
 	}
 
-	endLocalStorage = JSON.parse(window.localStorage.getItem('endTime')) || [];
+	// if (!startLocalStorage.some(record => record.start === date && record.user_id === user.value.user_id)) {
+	// 	alert('출근시간이 기록되지 않았습니다. 출근시간을 먼저 기록해주세요.');
+	// 	return;
+	// }
+
+	// endLocalStorage = JSON.parse(window.localStorage.getItem('endTime')) || [];
+
+	
 
 	if (!endLocalStorage.some(record => record.end === date && record.user_id === user.value.user_id)) {
 		timeRecords.value.end = time;
@@ -225,31 +203,32 @@ const endWork = () => {
 }
 
 // 일일 근무시간 기록
-const workTime = (item) => {
-	let workTime = ''
-	// commuteRecords.value.forEach(item => {
-		console.log('item : ', item);
-		const start = item.startWork.split(':');
-		const end = item.endWork.split(':');
-		const startHour = parseInt(start[0]);
-		const startMin = parseInt(start[1]);
-		const endHour = parseInt(end[0]);
-		const endMin = parseInt(end[1]);
-		const workHour = endHour - startHour;
-		const workMin = endMin - startMin;
+// const workTime = (item) => {
+// 	let workTime = ''
+// 	// commuteRecords.value.forEach(item => {
+// 		console.log('item : ', item);
+// 		const start = item.startWork.split(':');
+// 		const end = item.endWork.split(':');
+// 		const startHour = parseInt(start[0]);
+// 		const startMin = parseInt(start[1]);
+// 		const endHour = parseInt(end[0]);
+// 		const endMin = parseInt(end[1]);
+// 		const workHour = endHour - startHour;
+// 		const workMin = endMin - startMin;
 
-		console.log('workHour : ', workHour);
+// 		console.log('workHour : ', workHour);
 
-		workTime = `${workHour}시간 ${workMin}분`;
-	// });
-	return workTime;
-}
+// 		workTime = `${workHour}시간 ${workMin}분`;
+// 	// });
+// 	return workTime;
+// }
 
 // 로그아웃
 const logout = async () => {
 	try {
 		await skapi.logout();
 		router.push('/');
+		// window.localStorage.clear();
 	} catch (error) {
 		console.error('로그아웃 중 오류 발생 : ', error);
 	}
@@ -257,59 +236,61 @@ const logout = async () => {
 
 // 출퇴근 시간 기록 저장
 const onRecord = () => {
-	startLocalStorage = JSON.parse(window.localStorage.getItem('startTime')) || [];
-	endLocalStorage = JSON.parse(window.localStorage.getItem('endTime')) || [];
+	commuteLocalStorage = JSON.parse(window.localStorage.getItem(`commuteRecords : ${user.value.user_id}`)) || [];
 
 	// 만약 출근시간 기록이 있다면
-	if (startLocalStorage.length > 0) {
-		const startFilter = startLocalStorage.filter((item) => item.user_id === user.value.user_id);	// 현재 사용자 출근시간 필터
+	if (commuteLocalStorage.length > 0) {
+		console.log('출근기록 있음');
+		console.log('commuteLocalStorage : ', commuteLocalStorage);
+		// const startFilter = startLocalStorage.filter((item) => item.user_id === user.value.user_id);	// 현재 사용자 출근시간 필터
 
-		startFilter.forEach((item) => {
-			if (item.date === timeRecords.value.date) {
-				timeRecords.value.start = item.title.replace('출근 : ', '');	// 오늘의 출근시간 기록
-			}
-		});
-		commuteRecords.value = startLocalStorage;
+		// startFilter.forEach((item) => {
+		// 	if (item.date === timeRecords.value.date) {
+		// 		timeRecords.value.start = item.title.replace('출근 : ', '');	// 오늘의 출근시간 기록
+		// 	}
+		// });
+		// commuteRecords.value = startLocalStorage;
 
-		// 만약 날짜가 바뀌었다면 출근시간 초기화
-		if ((startLocalStorage[startLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
-			timeRecords.value.start = '';
-		}
+		// // 만약 날짜가 바뀌었다면 출근시간 초기화
+		// if ((startLocalStorage[startLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
+		// 	timeRecords.value.start = '';
+		// }
+	} else {
+		console.log('출근기록 없음');
+		console.log('commuteLocalStorage : ', commuteLocalStorage);
 	}
 
 	// 만약 퇴근시간 기록이 있다면
-	if (endLocalStorage.length > 0) {
-		const endFilter = endLocalStorage.filter((item) => item.user_id === user.value.user_id);
+	// if (endLocalStorage.length > 0) {
+	// 	const endFilter = endLocalStorage.filter((item) => item.user_id === user.value.user_id);
 
-		endFilter.forEach((item) => {
-			if (item.date === timeRecords.value.date) {
-				timeRecords.value.end = item.title.replace('퇴근 : ', '');	// 오늘의 퇴근시간 기록
-			}
-		});
+	// 	endFilter.forEach((item) => {
+	// 		if (item.date === timeRecords.value.date) {
+	// 			timeRecords.value.end = item.title.replace('퇴근 : ', '');	// 오늘의 퇴근시간 기록
+	// 		}
+	// 	});
 
-		// 출근시간만 찍고 퇴근은 안 찍었을 수 있으니까, 출퇴근 시간 매칭
-		commuteRecords.value.forEach(item => {
-			endFilter.forEach(endItem => {
-				if (item.date === endItem.date) {
-					item.endWork = endItem.endWork;
-				}
-			});
-		});
+	// 	// 출근시간만 찍고 퇴근은 안 찍었을 수 있으니까, 출퇴근 시간 매칭
+	// 	commuteRecords.value.forEach(item => {
+	// 		endFilter.forEach(endItem => {
+	// 			if (item.date === endItem.date) {
+	// 				item.endWork = endItem.endWork;
+	// 			}
+	// 		});
+	// 	});
 
-		// 만약 날짜가 바뀌었다면 퇴근시간 초기화
-		if ((endLocalStorage[endLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
-			timeRecords.value.end = '';
-		}
-	}
-
-	workTime();
+	// 	// 만약 날짜가 바뀌었다면 퇴근시간 초기화
+	// 	if ((endLocalStorage[endLocalStorage.length - 1].date !== timeRecords.value.date) && startLocalStorage.user_id !== user.value.user_id) {
+	// 		timeRecords.value.end = '';
+	// 	}
+	// }
 }
 
 onMounted(async () => {
 	// timeRecords.value.date = getDate();
 	timeRecords.value.date = '2024-12-26';
 
-  	const res = await getUserInfo();
+	const res = await getUserInfo();
 
 	if (!res) return;
 	user.value = res;
@@ -318,28 +299,28 @@ onMounted(async () => {
 		const res = await getUserList();
 	}
 
-	onRecord();
-	startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
-	commuteRecords.value = startLocalStorage;
+	// onRecord();
+	// // startLocalStorage = startLocalStorage.filter((item) => item.user_id === user.value.user_id);
+	// commuteRecords.value = commuteLocalStorage;
 
-	const text = document.querySelector("h1");
+	// const text = document.querySelector("h1");
 
-	function getTime(){
-		const Dday = new Date("2021-08-29:00:00:00+0900");
-		const today = new Date();
-		const diff = Dday.getTime() - today.getTime(),
-			// Ms 단위로 변환
-			secInMs = Math.floor(difference / 1000),
-			minInMs = Math.floor(secInMs / 60),
-			hourInMs = Math.floor(minInMs / 60),
-			days = Math.floor(hourInMs / 24),
-			// 남은 시간 계산
-			seconds = secInMs % 60,
-			minutes = minInMs % 60,
-			hours = minutes % 24;
+	// function getTime(){
+	// 	const Dday = new Date("2021-08-29:00:00:00+0900");
+	// 	const today = new Date();
+	// 	const diff = Dday.getTime() - today.getTime(),
+	// 		// Ms 단위로 변환
+	// 		secInMs = Math.floor(difference / 1000),
+	// 		minInMs = Math.floor(secInMs / 60),
+	// 		hourInMs = Math.floor(minInMs / 60),
+	// 		days = Math.floor(hourInMs / 24),
+	// 		// 남은 시간 계산
+	// 		seconds = secInMs % 60,
+	// 		minutes = minInMs % 60,
+	// 		hours = minutes % 24;
 
-		text.innerHTML = `${days}일 ${hours}시간 ${minutes}분 ${seconds}초`
-	}
+	// 	text.innerHTML = `${days}일 ${hours}시간 ${minutes}분 ${seconds}초`
+	// }
 });
 </script>
 
