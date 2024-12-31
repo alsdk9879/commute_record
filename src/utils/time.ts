@@ -18,4 +18,41 @@ const getTime = () => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-export { getDate, getTime };
+// string -> timestamp
+const convertTimeToTimestamp = (timeStr: string) => {
+  // 현재 날짜 가져오기
+  const today = new Date();
+
+  // 시간 문자열 파싱
+  const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+
+  // 현재 날짜에 입력받은 시간 설정
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes, seconds);
+
+  return date.getTime();
+};
+
+// 시간이 범위 내에 있는지 확인
+// string(15:00:00)를 받아야함.
+const isTimeInRange = (targetTime: string, minTime: string, maxTime: string) => {
+  const targetTimestamp = convertTimeToTimestamp(targetTime);
+  const minTimestamp = convertTimeToTimestamp(minTime);
+  const maxTimestamp = convertTimeToTimestamp(maxTime);
+
+  return targetTimestamp >= minTimestamp && targetTimestamp <= maxTimestamp;
+};
+
+// 시간이 범위 내에 있는지 확인
+// timestamp를 받아야함.
+const isTimeInRangeTimestramp = (targetTimestamp: number, minTimestamp: number, maxTimestamp: number) => {
+  return targetTimestamp >= minTimestamp && targetTimestamp <= maxTimestamp;
+};
+
+// 타임스탬프에 특정 시간을 더합니다.
+const addTimeToTimestamp = (timestamp: number, { hours = 0, minutes = 0, seconds = 0 }) => {
+  const milliseconds = (hours * 3600 + minutes * 60 + seconds) * 1000;
+
+  return timestamp + milliseconds;
+};
+
+export { getDate, getTime, convertTimeToTimestamp, isTimeInRange, isTimeInRangeTimestramp, addTimeToTimestamp };

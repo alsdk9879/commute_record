@@ -57,19 +57,14 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
-import { getDate, getTime, convertTimeToTimestamp, isTimeInRange, isTimeInRangeTimestramp, addTimeToTimestamp } from '@/utils/time';
+import { getDate, getTime, convertTimeToTimestamp } from '@/utils/time';
 import { getUserInfo, getUserList } from '@/hooks/getUser'
   
 const router = useRouter();
 const route = useRoute();
 
 const testMinTime = convertTimeToTimestamp('16:00:00');
-const testMaxTime = convertTimeToTimestamp('23:00:00');
-
-console.log('=== testMinTime === : ', testMinTime);
-
-// const isValid = isTimeInRange('17:30:00', '16:00:00', '18:00:00');
-// console.log(isValid);
+const testMaxTime = convertTimeToTimestamp('16:00:00');
 
 const user = ref({});
 const commuteRecords = ref([]);
@@ -80,33 +75,33 @@ const timeRecords = ref({
 });
 const monthlyWorkTime = ref('');
 
-// const addHoursToTime = (time, hoursToAdd) => {
-//   const [hours, minutes, seconds] = time.split(':').map(Number); // 시간 문자열 파싱
-//   const date = new Date(); // 임시 날짜 생성
-//   date.setHours(hours + hoursToAdd, minutes, seconds, 0); // 시간 추가
+const addHoursToTime = (time, hoursToAdd) => {
+  const [hours, minutes, seconds] = time.split(':').map(Number); // 시간 문자열 파싱
+  const date = new Date(); // 임시 날짜 생성
+  date.setHours(hours + hoursToAdd, minutes, seconds, 0); // 시간 추가
 
-//   // 새로운 시간을 "HH:mm:ss" 형식으로 반환
-//   const newHours = String(date.getHours()).padStart(2, '0');
-//   const newMinutes = String(date.getMinutes()).padStart(2, '0');
-//   const newSeconds = String(date.getSeconds()).padStart(2, '0');
-//   return `${newHours}:${newMinutes}:${newSeconds}`;
-// };
+  // 새로운 시간을 "HH:mm:ss" 형식으로 반환
+  const newHours = String(date.getHours()).padStart(2, '0');
+  const newMinutes = String(date.getMinutes()).padStart(2, '0');
+  const newSeconds = String(date.getSeconds()).padStart(2, '0');
+  return `${newHours}:${newMinutes}:${newSeconds}`;
+};
 
-// // 마스터가 정한 기본 출퇴근 시간 (시간은 임시작성)
-// const defaultCommute = ref({
-// 	minStart: testMinTime,	// 8시
-// 	maxStart: testMaxTime,	// 10시
-// 	minEnd: addHoursToTime(testMinTime, 8),	// 17시
-// 	maxEnd: addHoursToTime(testMaxTime, 8)	// 19시
-// });
+// 마스터가 정한 기본 출퇴근 시간 (시간은 임시작성)
+const defaultCommute = ref({
+	minStart: testMinTime,	// 8시
+	maxStart: testMaxTime,	// 10시
+	minEnd: addHoursToTime(testMinTime, 8),	// 17시
+	maxEnd: addHoursToTime(testMaxTime, 8)	// 19시
+});
 
-// // 기본 출퇴근 시간에서 16시간 뒤 시간
-// const maxCommuteTime = ref({
-// 	minStart: addHoursToTime(testMinTime, 16),	// 다음날 0시
-// 	maxStart: addHoursToTime(testMaxTime, 16),	// 다음날 2시
-// 	minEnd: addHoursToTime(addHoursToTime(testMinTime, 8), 16),	// 다음날 9시
-// 	maxEnd: addHoursToTime(addHoursToTime(testMaxTime, 8), 16)	// 다음날 11시
-// });
+// 기본 출퇴근 시간에서 16시간 뒤 시간
+const maxCommuteTime = ref({
+	minStart: addHoursToTime(testMinTime, 16),	// 다음날 0시
+	maxStart: addHoursToTime(testMaxTime, 16),	// 다음날 2시
+	minEnd: addHoursToTime(addHoursToTime(testMinTime, 8), 16),	// 다음날 9시
+	maxEnd: addHoursToTime(addHoursToTime(testMaxTime, 8), 16)	// 다음날 11시
+});
 
 let userLocalStorage = JSON.parse(window.localStorage.getItem('usersInfo')) || [];	// 직원 정보 저장
 let commuteLocalStorage;	// 직원별 출퇴근 정보 저장소
@@ -115,48 +110,27 @@ let commuteLocalStorage;	// 직원별 출퇴근 정보 저장소
 const startWork = () => {
 	// const date = getDate();
   const date = '2024-12-11';
-
-	const timestamp = convertTimeToTimestamp(getTime());
-
-	// 출근 기록이 없거나 다른 날짜의 기록인 경우
-	const isCommuted = commuteLocalStorage.length === 0 || (commuteLocalStorage.length > 0 && commuteLocalStorage[commuteLocalStorage.length - 1].date !== date);	
-
-	// 마스터가 정한 시간 범위에 있는 지 확인
-	const isValid = isTimeInRangeTimestramp(timestamp, testMinTime, testMaxTime);
-
-	console.log('isCommuted : ', isCommuted);
-
-	if(isValid) {
-		console.log('=== 출근시간이 범위 안에 있음 ===');
-	}
-
   const time = getTime();
-
 	const newCommute = {
 		date: date,
 		startWork: time,
 		endWork: '',
-		
 	};	// 새로운 출근 기록
 
   timeRecords.value.date = date;
 
   // 출근 기록이 없거나 다른 날짜의 기록일 경우 새로운 출근 기록 추가
-  if (isCommuted) {
+  if (commuteLocalStorage.length === 0 || (commuteLocalStorage.length > 0 && commuteLocalStorage[commuteLocalStorage.length - 1].date !== date)) {
     timeRecords.value.start = time;
-		timeRecords.value.end = '';
 
     commuteLocalStorage.push(newCommute);
     commuteRecords.value = commuteLocalStorage;
 
     window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
 		console.log('출근 AA : 출근 기록 아예 없거나, 다른 날짜가 돼서 새로 출근 찍음 ===============');
-  } 
-	else {
+  } else {
     const startWorkTime = commuteLocalStorage[commuteLocalStorage.length - 1].startWork;	// 기존 출근 기록 확인
     const currentDate = new Date(); // 현재 날짜 가져오기
-
-		console.log('startWorkTime : ', startWorkTime);
 
     // 기존 출근 시간 설정
     const [hours, minutes, seconds] = startWorkTime.split(':').map(Number);
@@ -177,7 +151,6 @@ const startWork = () => {
 
     // 16시간 이상 지나서 새로운 출근 시간 기록
     timeRecords.value.start = time;
-		timeRecords.value.end = '';
 
     commuteLocalStorage.push(newCommute);
     commuteRecords.value = commuteLocalStorage;
@@ -185,19 +158,11 @@ const startWork = () => {
     window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
 		console.log('출근 DD : 10초 이상 지나고 찍음 ===============');
   }
-
-	if(!isValid) {
-		console.log('=== 출근시간이 범위를 벗어남 ===');
-		alert('출근시간 범위를 벗어났습니다.');
-	}
 };
 
 
 // 퇴근시간 기록
 const endWork = () => {
-	const timestamp = convertTimeToTimestamp(getTime());
-	const isValid = isTimeInRangeTimestramp(timestamp, testMinTime, testMaxTime);	// 마스터가 정한 시간 범위에 있는 지 확인
-
 	// const date = getDate();
 	const time = getTime();
 	const date = '2024-12-11';
@@ -216,15 +181,9 @@ const endWork = () => {
 		console.log('퇴근 AA : 출근 찍어라 ==================');
 
 		// 기본 출근시간 범위 내에 퇴근시간을 찍는 경우, 출근시간을 먼저 기록하라는 알림
-		if(isValid) {
-			console.log('=== 출근시간 범위 안에 있음 ===');
+		if(defaultCommute.value.minStart < (commuteLocalStorage.endWork = time) && (commuteLocalStorage.endWork = time) < defaultCommute.value.maxStart) {
 			alert('출근시간이 기록되지 않았습니다. 출근시간부터 기록해주세요.');
 			return;
-		}
-
-		if(!isValid) {
-			console.log('=== 출근시간 범위를 벗어남 ===');
-			alert('출근시간 범위를 벗어났습니다.');
 		}
 
 		alert('출근시간이 기록되지 않았습니다. 퇴근시간만 기록됩니다.');
@@ -241,47 +200,23 @@ const endWork = () => {
 	}
 
 	// 퇴근시간 기록
-	if(commuteLocalStorage.length > 0) {
+	if(commuteLocalStorage.length > 0 && commuteLocalStorage[commuteLocalStorage.length - 1].date === date) {
 		console.log('퇴근 기록 있음');
 		console.log('=== endWork === commuteLocalStorage : ', commuteLocalStorage);
-		console.log('=== endWork === commuteLocalStorage[commuteLocalStorage.length - 1] : ', commuteLocalStorage[commuteLocalStorage.length - 1]);
 
-		// 가장 최근 출/퇴근 기록 확인
+		// 기존 출근 기록 확인
     const startWorkTime = commuteLocalStorage[commuteLocalStorage.length - 1].startWork;
-		const endWorkTime = commuteLocalStorage[commuteLocalStorage.length - 1].endWork;
-
-		// 현재 날짜 가져오기
-    const currentDate = new Date(); 
+    const currentDate = new Date(); // 현재 날짜 가져오기
 
     // 기존 출근 시간 설정
     const [hours, minutes, seconds] = startWorkTime.split(':').map(Number);
     currentDate.setHours(hours, minutes, seconds, 0);
     // currentDate.setHours(houre, minutee, seconde, 0);
 
-		// 기존 출근 시간의 타임스탬프
-    const startWorkTimestamp = convertTimeToTimestamp(startWorkTime); 
-		const endWorkTimestamp = convertTimeToTimestamp(endWorkTime);
-    
-		// 현재 시간의 타임스탬프
-		const currentTimestamp = convertTimeToTimestamp(getTime()); 
+    const startWorkTimestamp = currentDate.getTime(); // 기존 출근 시간의 타임스탬프
+    const currentTimestamp = Date.now(); // 현재 시간의 타임스탬프
 
-		// 16시간을 더한 타임스탬프
-		const maxCommuteTime = addTimeToTimestamp(startWorkTimestamp, 16, 0, 0);
-
-		console.log('startWorkTime : ', startWorkTime);
-		console.log('endWorkTime : ', endWorkTime);
-		console.log('currentTimestamp : ', currentTimestamp);
-		console.log('startWorkTimestamp : ', startWorkTimestamp);
-		console.log('endWorkTimestamp : ', endWorkTimestamp);
-		console.log('maxCommuteTime : ', maxCommuteTime);
-
-		if (endWorkTime) {
-			console.log('퇴근시간이 이미 기록되어 있습니다.');			
-			// return;
-		}
-
-		
-
+		console.log('=== endWork === startWorkTime : ', startWorkTime);
 
 		// (test) 출근기록으로부터 20초 이내에 출근 시간을 찍으려는 경우
 		// if ((currentTimestamp - startWorkTimestamp) / (1000 * 60 * 60) < 16) {
@@ -295,14 +230,18 @@ const endWork = () => {
 
 			window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
 			console.log('퇴근 AA ===============');
+			
+			// if((startWorkTime && ((currentTimestamp - startWorkTimestamp) / 1000 > 10))) {
+			// 	alert('퇴근시간이 이미 기록되어 있습니다.');
+			// 	return;
+			// }
     } else {
 			console.log('=== 확확확인인인 ===');
-			// alert('퇴근시간이 이미 기록되어 있습니다.');
-			return;
 
 			if(maxCommuteTime.value.maxEnd < (commuteLocalStorage.endWork = time)) {
 				console.log('=== endWork === startWorkTimestamp : ', startWorkTimestamp);
 				console.log('=== endWork === commuteLocalStorage.endWork : ', commuteLocalStorage.endWork);
+				console.log('=== endWork === maxCommuteTime.value.maxEnd : ', maxCommuteTime.value.maxEnd);
 				timeRecords.value.end = time;
 				commuteLocalStorage.push(newCommute);
 				commuteRecords.value = commuteLocalStorage;
@@ -350,6 +289,9 @@ const endWork = () => {
 		commuteRecords.value = commuteLocalStorage;
 		window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
 
+		console.log('=== endWork === defaultCommute.value : ', defaultCommute.value);
+		console.log('=== endWork === maxCommuteTime.value : ', maxCommuteTime.value);
+		
 		console.log('퇴근 CC ===============');
 	} else {
 		alert('퇴근시간이 이미 기록되어 있습니다.');
@@ -396,6 +338,42 @@ const calcWorkTime = () => {
 	window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteRecords.value));
 };
 
+// 자동 출퇴근 처리
+const autoCommute = () => {
+  const date = '2024-12-11'; // 현재 날짜 (임시 설정)
+  const time = getTime();    // 현재 시간 가져오기
+
+  const startWorkTime = commuteLocalStorage[commuteLocalStorage.length - 1]?.startWork || ''; // 기존 출근 기록 확인
+  const currentDate = new Date(); // 현재 날짜 가져오기
+
+  if (!startWorkTime) {
+    console.log('출근 기록이 없습니다.');
+    return;
+  }
+
+  // 기존 출근 시간 설정
+  const [hours, minutes, seconds] = startWorkTime.split(':').map(Number);
+  currentDate.setHours(hours, minutes, seconds, 0);
+
+  const startWorkTimestamp = currentDate.getTime(); // 기존 출근 시간의 타임스탬프
+  const currentTimestamp = Date.now(); // 현재 시간의 타임스탬프
+
+  // 만약 기본 출근 시간 범위 내에 출근하지 않은 경우
+  if (
+    startWorkTime < defaultCommute.value.minStart || 
+    startWorkTime > defaultCommute.value.maxStart
+  ) {
+    console.log('출근 시간이 기본 범위에서 벗어남');
+    commuteLocalStorage[commuteLocalStorage.length - 1].startWork = '-'; // 출근 시간을 '-'로 표시
+  } else {
+    console.log('출근 시간이 정상 범위에 있음');
+  }
+
+  // 로컬 스토리지 갱신
+  window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteLocalStorage));
+};
+
+
 // 로그아웃
 const logout = async () => {
 	try {
@@ -438,6 +416,10 @@ onMounted(async () => {
 	commuteLocalStorage = JSON.parse(window.localStorage.getItem(`commuteRecords : ${user.value.user_id}`)) || [];
 
 	onRecord();
+	// autoCommute();
+
+	console.log('=== defaultCommute.value.minStart === : ', defaultCommute.value.minStart);
+	console.log('=== maxCommuteTime.value.maxEnd === : ', maxCommuteTime.value.maxEnd);
 });
 </script>
 
