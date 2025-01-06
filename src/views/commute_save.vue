@@ -37,6 +37,7 @@
 				col(style="width: 10%")
 				col(style="width: 10%")
 				col(style="width: 10%")
+				col(style="width: 10%")
 
 			thead
 				tr
@@ -44,6 +45,7 @@
 					th 출근시간
 					th 퇴근시간
 					th 근무시간
+					th 비고
 
 			tbody
 				tr(v-for="record in commuteRecords")
@@ -51,6 +53,8 @@
 					td.start-time {{ extractTimeFromDateTime(record.startTime) }}
 					td.end-time {{ extractTimeFromDateTime(record.endTime) }}
 					td.work-time {{ record.dailyCommuteTime }}
+					td.remark
+						input(type="text" v-model="record.remark" @blur="updateDesc(record)")
 </template>
 
 <script setup>
@@ -104,6 +108,17 @@ const monthlyWorkTime = ref("");	// 한 달 총 근무시간
 
 let userLocalStorage = JSON.parse(window.localStorage.getItem("usersInfo")) || []; // 직원 정보 저장
 let commuteLocalStorage; // 직원별 출퇴근 정보 저장소
+
+// 비고란 작성 내용 업데이트
+const updateDesc = (record) => {
+	const recordIndex = commuteRecords.value.findIndex((r) => r.id === record.id);
+	if (recordIndex !== -1) {
+		commuteRecords.value[recordIndex].desc = record.desc;
+
+		// 로컬스토리지에 변경 사항 저장
+		window.localStorage.setItem(`commuteRecords : ${user.value.user_id}`, JSON.stringify(commuteRecords.value));
+	}
+};
 
 // 출근시간 기록 저장소 초기화
 const generateWorkTime = () => {
@@ -252,7 +267,7 @@ const endWork = () => {
 	// 퇴근 기록 가능한 최대 시간 (출근시간으로부터 16시간이 기준)
   const maxEndTime = addTimeToTimestamp(value.startTimeStamp, {
     // hours: maxHour,
-    seconds: 70,
+    seconds: 5,
   });
 
 	// 새로운 퇴근 기록 가능한 시간
@@ -293,6 +308,10 @@ const endWork = () => {
 			commuteLocalStorage[commuteLocalStorage.length - 1];
 
 			const endTimeStamp = convertToTimestamp(`${getDate()} ${getTime()}`);
+			const dailyCommuteTime = convertMsToTime(endTimeStamp - value.startTimeStamp);
+			const dailyCommuteTimeStamp = endTimeStamp - value.startTimeStamp;
+			let totalCommuteTime = value.totalCommuteTime || 0;
+			totalCommuteTime += dailyCommuteTimeStamp;
 
 			const data = {
 				...initWorkFormat,
@@ -301,6 +320,9 @@ const endWork = () => {
 				ord: lastCommute?.ord + 1 || 1,
 				endTime: getTime(),
 				endTimeStamp,
+				dailyCommuteTime,
+				totalCommuteTime,
+				calculated: false, // 계산 여부 플래그
 			};
 
 			commuteLocalStorage = [...commuteLocalStorage, data];	// 저장소 맨 뒤에 data 추가
