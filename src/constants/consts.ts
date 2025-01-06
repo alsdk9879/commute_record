@@ -6,7 +6,7 @@ export interface IWorkFormat {
   endTime: string | null;
   startTimeStamp: number | null;
   endTimeStamp: number | null;
-  totalCommuteTime: number | null;
+  dailyCommuteTime: number | null;
 }
 
 // 초기화
@@ -18,5 +18,5 @@ export const initWorkFormat: IWorkFormat = {
   endTime: null,
   startTimeStamp: null,
   endTimeStamp: null,
-  totalCommuteTime: null,
+  dailyCommuteTime: null,
 };
