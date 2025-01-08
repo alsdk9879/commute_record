@@ -1,6 +1,4 @@
 export interface IWorkFormat {
-  id: string | null;
-  ord: number | null;
   date: string | null;
   startTime: string | null;
   endTime: string | null;
@@ -11,8 +9,6 @@ export interface IWorkFormat {
 
 // 초기화
 export const initWorkFormat: IWorkFormat = {
-  id: null,
-  ord: null,
   date: null,
   startTime: null,
   endTime: null,

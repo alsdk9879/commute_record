@@ -11,10 +11,6 @@
 			span.label 비밀번호
 			input.input.password(type="password" name="password" placeholder="At least 6 characters" minlength="6" required)
 
-		label.input-wrap
-			span.label 이름
-			input.input.name(type="text" name="name" placeholder="name" required)
-
 		.btn-wrap
 			router-link.btn-join(to="/signup") 회원가입
 			button.btns.btn-login(type="submit") 로그인
@@ -30,7 +26,6 @@ const route = useRoute();
 const login = async (event) => {
     const email = event.target.elements.email.value;
     const password = event.target.elements.password.value;
-    const name = event.target.elements.name.value;
 
 	const parms = {
 		email: email,
